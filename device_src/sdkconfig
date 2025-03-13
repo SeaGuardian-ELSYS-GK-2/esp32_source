@@ -1032,7 +1032,7 @@ CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT=y
 # WPS Configuration Options
 #
 # CONFIG_ESP_WIFI_WPS_STRICT is not set
-# CONFIG_ESP_WIFI_WPS_PASSPHRASE is not set
+CONFIG_ESP_WIFI_WPS_PASSPHRASE=y
 # end of WPS Configuration Options
 
 # CONFIG_ESP_WIFI_DEBUG_PRINT is not set
@@ -1776,7 +1776,7 @@ CONFIG_WIFI_PROV_STA_ALL_CHANNEL_SCAN=y
 # end of Wi-Fi Provisioning Manager
 # end of Component config
 
-# CONFIG_IDF_EXPERIMENTAL_FEATURES is not set
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
 
 # Deprecated options for backward compatibility
 # CONFIG_APP_BUILD_TYPE_ELF_RAM is not set
