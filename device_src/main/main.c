@@ -37,7 +37,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    esp_err_t err = ntp_sync_wifi_connect((uint8_t*)ESP_WIFI_SSID, (uint8_t*)ESP_WIFI_PASS);
+    esp_err_t err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
     if (err == ESP_FAIL)
         return;
 

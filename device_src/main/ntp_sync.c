@@ -33,7 +33,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
     }
 }
 
-esp_err_t ntp_sync_wifi_connect(uint8_t* wifi_ssid, uint8_t* wifi_pass) {
+esp_err_t ntp_sync_wifi_connect(char* wifi_ssid, char* wifi_pass) {
     // Create FreeRTOS event group
     s_wifi_event_group = xEventGroupCreate();
 
@@ -61,8 +61,6 @@ esp_err_t ntp_sync_wifi_connect(uint8_t* wifi_ssid, uint8_t* wifi_pass) {
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = {*wifi_ssid},
-            .password = {*wifi_pass},
             /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
@@ -74,14 +72,17 @@ esp_err_t ntp_sync_wifi_connect(uint8_t* wifi_ssid, uint8_t* wifi_pass) {
         },
     };
 
-    printf("Connecting to %s with password: %s\n", wifi_ssid, wifi_pass);
+    // Set ssid and password
+    memcpy(wifi_config.sta.ssid, wifi_ssid, 32);
+    memcpy(wifi_config.sta.password, wifi_pass, 64);
 
+    printf("Connecting to %s with password: %s\n", wifi_config.sta.ssid, wifi_config.sta.password);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "wifi_init_sta finished.\nStarting connection with SSID:%s", wifi_ssid);
+    ESP_LOGI(TAG, "wifi_init_sta finished.\nStarting connection with SSID:%s", wifi_config.sta.ssid);
 
     // Waiting until either the connection is stablished (WIFI_CONNECTED BIT) or connection failed for the maximum
     // number of tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above)
@@ -93,9 +94,9 @@ esp_err_t ntp_sync_wifi_connect(uint8_t* wifi_ssid, uint8_t* wifi_pass) {
 
     // xEventGroupWaitBits() returns the bits before the call returened, hence we can test which event actually happened
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Connected to AP SSID:%s, password:%s", wifi_ssid, wifi_pass);
+        ESP_LOGI(TAG, "Connected to AP SSID:%s, password:%s", wifi_config.sta.ssid, wifi_config.sta.password);
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGE(TAG, "Failed to connect to SSID:%s, password:%s", wifi_ssid, wifi_pass);
+        ESP_LOGE(TAG, "Failed to connect to SSID:%s, password:%s", wifi_config.sta.ssid, wifi_config.sta.password);
         return ESP_FAIL;
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
