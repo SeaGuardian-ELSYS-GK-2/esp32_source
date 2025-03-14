@@ -19,6 +19,7 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "includes/ntp_sync.h"
+#include "includes/gain_controller.h"
 
 #define ESP_WIFI_SSID      "morten_iphone"
 #define ESP_WIFI_PASS      "aPwIWF&24ot"
@@ -37,14 +38,26 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    // Sync clocks
     esp_err_t err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
     if (err == ESP_FAIL)
         return;
 
+    char* ntp_server = "pool.ntp.org";
+    err = ntp_sync(ntp_server);
+    if (err == ESP_FAIL) {
+        ESP_LOGE(TAG, "Failed to sync time");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Sucessfully synced time to NTP server: %s", ntp_server);
+    }
 
-    err = ntp_sync("pool.ntp.org");
-    if (err == ESP_FAIL)
-        ESP_LOGI(TAG, "Failed to sync time");
-    else
-        ESP_LOGI(TAG, "Great success!");
+    // Set gain
+    err = gain_init();
+    if (err == ESP_FAIL) {
+        ESP_LOGE(TAG, "Failed to initialize gain I2C bus");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Successfully initialized gain I2C bus");
+    }
 }
