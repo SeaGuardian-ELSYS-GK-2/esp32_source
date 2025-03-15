@@ -28,9 +28,6 @@
 #define ESP_WIFI_SSID      "morten_iphone"
 #define ESP_WIFI_PASS      "aPwIWF&24ot"
 
-#define CONFIG_I2C_MASTER_SCL 8
-#define CONFIG_I2C_MASTER_SDA 9
-
 static const char* TAG = "main";
 
 void app_main(void)
@@ -64,7 +61,9 @@ void app_main(void)
 
     // Set gain
     if (SET_GAIN_ENABLE) {
-        err = gain_init(CONFIG_I2C_MASTER_SCL, CONFIG_I2C_MASTER_SDA);
+        // DigiPOT 0 Init -> constantly on I2C 0
+        err = gain_init(0);
+
         if (err == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to initialize gain I2C bus");
             return;
@@ -72,6 +71,8 @@ void app_main(void)
             ESP_LOGI(TAG, "Successfully initialized gain I2C bus");
         }
 
-        set_gain(2);
+        set_gain(0, 2);
+        set_gain(1, 64);
+        set_gain(2, 32);
     }
 }

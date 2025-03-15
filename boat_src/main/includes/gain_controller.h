@@ -16,6 +16,6 @@
 
 #define SENSOR_ADDR                 0b0101110        /*!< Slave address of the MPU9250 sensor */
 
-esp_err_t gain_init(uint8_t sda_pin, uint8_t scl_pin);
-esp_err_t set_gain(uint8_t gain);
-esp_err_t read_gain(uint8_t* gain);
+esp_err_t gain_init(uint8_t i2c_num);
+esp_err_t set_gain(uint8_t i2c_num, uint8_t gain);
+esp_err_t read_gain(uint8_t i2c_num, uint8_t* gain);
