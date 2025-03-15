@@ -21,14 +21,22 @@
 #include "includes/ntp_sync.h"
 #include "includes/gain_controller.h"
 
+// Config
+#define SYNC_TIME_ENABLE false
+#define SET_GAIN_ENABLE  true
+
 #define ESP_WIFI_SSID      "morten_iphone"
 #define ESP_WIFI_PASS      "aPwIWF&24ot"
+
+#define CONFIG_I2C_MASTER_SCL 8
+#define CONFIG_I2C_MASTER_SDA 9
 
 static const char* TAG = "main";
 
 void app_main(void)
 {
     printf("Startup...\n");
+    esp_err_t err;
 
     // Initialize NVS flash
     esp_err_t ret = nvs_flash_init();
@@ -39,25 +47,31 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Sync clocks
-    esp_err_t err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
-    if (err == ESP_FAIL)
-        return;
-
-    char* ntp_server = "pool.ntp.org";
-    err = ntp_sync(ntp_server);
-    if (err == ESP_FAIL) {
-        ESP_LOGE(TAG, "Failed to sync time");
-        return;
-    } else {
-        ESP_LOGI(TAG, "Sucessfully synced time to NTP server: %s", ntp_server);
+    if (SYNC_TIME_ENABLE) {
+        err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
+        if (err == ESP_FAIL)
+            return;
+        
+        char* ntp_server = "pool.ntp.org";
+        err = ntp_sync(ntp_server);
+        if (err == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to sync time");
+            return;
+        } else {
+            ESP_LOGI(TAG, "Sucessfully synced time to NTP server: %s", ntp_server);
+        }
     }
 
     // Set gain
-    err = gain_init();
-    if (err == ESP_FAIL) {
-        ESP_LOGE(TAG, "Failed to initialize gain I2C bus");
-        return;
-    } else {
-        ESP_LOGI(TAG, "Successfully initialized gain I2C bus");
+    if (SET_GAIN_ENABLE) {
+        err = gain_init(CONFIG_I2C_MASTER_SCL, CONFIG_I2C_MASTER_SDA);
+        if (err == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to initialize gain I2C bus");
+            return;
+        } else {
+            ESP_LOGI(TAG, "Successfully initialized gain I2C bus");
+        }
+
+        set_gain(2);
     }
 }
