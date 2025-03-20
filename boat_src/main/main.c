@@ -22,7 +22,7 @@
 #include "includes/gain_controller.h"
 
 // Config
-#define SYNC_TIME_ENABLE false
+#define SYNC_TIME_ENABLE true
 #define SET_GAIN_ENABLE  true
 
 #define ESP_WIFI_SSID      "morten_iphone"
@@ -64,7 +64,7 @@ void app_main(void)
 
     // Set gain
     if (SET_GAIN_ENABLE) {
-        err = gain_init(CONFIG_I2C_MASTER_SCL, CONFIG_I2C_MASTER_SDA);
+        err = gain_init(CONFIG_I2C_MASTER_SDA, CONFIG_I2C_MASTER_SCL);
         if (err == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to initialize gain I2C bus");
             return;
@@ -72,6 +72,18 @@ void app_main(void)
             ESP_LOGI(TAG, "Successfully initialized gain I2C bus");
         }
 
-        set_gain(2);
+        uint8_t gain = 1;
+        set_gain(gain);
+
+        // while (true) {
+        //     gain++;
+        //     set_gain(gain);
+        //     vTaskDelay(20 / portTICK_PERIOD_MS);
+        //
+        //     if (gain >= 127)
+        //         gain = 0;
+        //
+        //     ESP_LOGI(TAG, "Gain: %d\n", gain);
+        // }
     }
 }
