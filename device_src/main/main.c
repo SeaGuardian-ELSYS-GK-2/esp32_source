@@ -19,6 +19,13 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "includes/ntp_sync.h"
+#include "includes/transducer_driver.h"
+#include "includes/water_sensor_reader.h"
+
+// Config
+#define SYNC_TIME_ENABLE false
+#define SEND_SIGNAL_ENABLE false
+#define WATER_SENSOR_ENABLE true
 
 #define ESP_WIFI_SSID      "morten_iphone"
 #define ESP_WIFI_PASS      "aPwIWF&24ot"
@@ -37,14 +44,46 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    esp_err_t err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
-    if (err == ESP_FAIL)
-        return;
+    // Sync clocks
+    if (SYNC_TIME_ENABLE) {
+        esp_err_t err = ntp_sync_wifi_connect((char*)ESP_WIFI_SSID, (char*)ESP_WIFI_PASS);
+        if (err == ESP_FAIL)
+            return;
 
 
-    err = ntp_sync("pool.ntp.org");
-    if (err == ESP_FAIL)
-        ESP_LOGI(TAG, "Failed to sync time");
-    else
-        ESP_LOGI(TAG, "Great success!");
+        char* ntp_server = "pool.ntp.org";
+        err = ntp_sync(ntp_server);
+        if (err == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to sync time");
+            return;
+        } else {
+            ESP_LOGI(TAG, "Sucessfully synced time to NTP server: %s", ntp_server);
+        }
+    }
+
+    // Initialize Transduser Send
+    if (SEND_SIGNAL_ENABLE) {
+        esp_err_t err = transducer_driver_init();        
+        if (err == ESP_FAIL) {
+            ESP_LOGE(TAG, "Could not initialize transducer driver");
+            return;
+        }
+
+        while (true) {
+            ESP_LOGI(TAG, "Sending signal...");
+            transducer_start();
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
+    }
+
+    if (WATER_SENSOR_ENABLE) {        
+        water_sensor_init();
+
+        int data;
+        while (true) {
+            water_sensor_read(&data);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+        }
+        water_sensor_deinit();
+    }
 }
