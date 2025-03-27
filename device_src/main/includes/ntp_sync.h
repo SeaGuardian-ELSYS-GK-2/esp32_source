@@ -13,6 +13,7 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 
 #include "esp_wifi.h"
 #include "esp_mac.h"
@@ -37,7 +38,7 @@
 #define WIFI_ESP_MAXIMUM_RETRY 8
 
 #define CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK true
-#define CONFIG_ESP_WIFI_AUTH_WPA3_PSK         true
+#define CONFIG_ESP_WIFI_AUTH_WPA2_WPA3_PSK    true
 
 #if CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK
 #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
@@ -69,3 +70,9 @@
 
 esp_err_t ntp_sync_wifi_connect(char* wifi_ssid, char* wifi_pass);
 esp_err_t ntp_sync(char* ntp_server_ip);
+
+/**
+ * @brief Test the ntp synchronization for two or more esp32's. Triggers GPIO pin at a regular,
+ * timed interval.
+ */
+esp_err_t ntp_sync_test(uint32_t GPIO_pin);

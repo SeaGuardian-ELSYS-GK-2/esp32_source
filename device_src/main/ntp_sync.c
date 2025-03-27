@@ -112,8 +112,8 @@ esp_err_t ntp_sync(char* ntp_server_ip) {
     esp_netif_sntp_init(&sntp_config);
 
     // Wait for NTP server response
-    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to update system time within 10s timeout");
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(100000)) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to update system time within 100s timeout");
         return ESP_FAIL;
     } else {
         ESP_LOGI(TAG, "Got good NTP update");
@@ -124,16 +124,63 @@ esp_err_t ntp_sync(char* ntp_server_ip) {
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 
-    // Get new time (mostly for debug)
-    time_t now;
-    time(&now);
-    struct tm timeinfo;
-    localtime_r(&now, &timeinfo);
-    ESP_LOGI(TAG, "Synced to NTP server. Time now: %s", asctime(&timeinfo));
+        // Get high-resolution time from ESP clock
+    struct timeval tv_now;
+    gettimeofday(&tv_now, NULL);
 
-    // Write to RTC? Not sure if necessery
-    struct timeval tv = { .tv_sec = now, .tv_usec = 0 };
-    settimeofday(&tv, NULL);
+    // Debug log with microsecond precision
+    ESP_LOGI(TAG, "Synced to NTP. Time now: %ld.%06ld", (long int)tv_now.tv_sec, (long int)tv_now.tv_usec);
+
+    // // Ensure RTC is updated with full precision
+    // settimeofday(&tv_now, NULL);
 
     return ESP_OK;
+}
+
+static int sync_test_gpio_pin = 0;
+static void ntp_sync_test_proc(void* arg) {
+    // Get milliseconds to next top of second
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    long long ms_until_next_second = 1000 - (tv.tv_usec / 1000);
+    ESP_LOGI(TAG, "Ms until second: %lld", (long long)ms_until_next_second);
+
+    // TickType_t xLastWakeTime = xTaskGetTickCount();
+    // vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(ms_until_next_second));
+    vTaskDelay(pdMS_TO_TICKS(ms_until_next_second));
+
+    int output_val = 0;
+    while (true) {
+        output_val = !output_val;
+        gpio_set_level(sync_test_gpio_pin, output_val);
+
+        ESP_LOGI(TAG, "Setting signal: %s", output_val ? "High" : "Low");
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // Get next time
+        gettimeofday(&tv, NULL);
+        ms_until_next_second = 1000 - (tv.tv_usec / 1000);
+        vTaskDelay(pdMS_TO_TICKS(ms_until_next_second));
+    }
+
+    vTaskDelete(NULL);
+}
+
+esp_err_t ntp_sync_test(uint32_t GPIO_pin) {
+    // Set GPIO pin
+    sync_test_gpio_pin = GPIO_pin;
+
+    // Initialize GPIO
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << GPIO_pin,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
+    };
+    gpio_config(&io_conf);
+
+    // Create task
+    return xTaskCreate(ntp_sync_test_proc, "ntp_sync_test_proc", 4096, NULL, 10, NULL);
 }
