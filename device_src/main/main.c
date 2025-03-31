@@ -18,14 +18,14 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "includes/ntp_sync.h"
-// #include "includes/transducer_driver.h"
+// #include "includes/ntp_sync.h"
+#include "includes/transducer_driver.h"
 // #include "includes/water_sensor_reader.h"
 
 // Config
-#define SYNC_TIME_ENABLE
-#define SYNC_TEST_ENABLE
-// #define SEND_SIGNAL_ENABLE
+// #define SYNC_TIME_ENABLE
+// #define SYNC_TEST_ENABLE
+#define SEND_SIGNAL_ENABLE
 // #define WATER_SENSOR_ENABLE
 
 #define ESP_WIFI_SSID      "morten_iphone"
@@ -80,10 +80,13 @@ void app_main(void)
         return;
     }
 
+
     while (true) {
         ESP_LOGI(TAG, "Sending signal...");
         transducer_start();
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(100 * time_one_period));
+        transducer_stop();
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 #endif
 

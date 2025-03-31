@@ -22,7 +22,7 @@
 #include "includes/gain_controller.h"
 
 // Config
-#define SYNC_TIME_ENABLE true
+#define SYNC_TIME_ENABLE false
 #define SET_GAIN_ENABLE  true
 
 #define ESP_WIFI_SSID      "morten_iphone"
